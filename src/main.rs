@@ -6,8 +6,11 @@ use crate::api::session::Session;
 
 mod api;
 
+
+
 fn main() {
-    let session = Session::from_token("abacaba".to_string());
+
+    let session = Session::from_token("abacaba");
     let api = VkApi::new(session);
-    api.call("users.get".to_string(), hashmap!("user_ids".to_string() => Box::new(1 as VkApiArg)));
+    api.call("users.get", hashmap!("user_ids".to_string() => Box::new(1 as VkApiArg)));
 }

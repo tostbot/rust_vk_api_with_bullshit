@@ -5,9 +5,9 @@ pub struct Session{
 }
 
 impl Session{
-    pub fn from_token(token: String) -> Self {
+    pub fn from_token(token: &str) -> Self {
         return Session{
-            token,
+            token: token.to_string(),
             user_id: None,
             version: "5.91".to_string()
         }

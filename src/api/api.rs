@@ -28,7 +28,7 @@ impl<T: Num + Display> VkApiArg for T {
 }
 
 impl VkApi{
-    pub async fn call(&self, method: String, params: HashMap<String, Box<dyn VkApiArg>>){
+    pub async fn call(&self, method: &str, params: HashMap<String, Box<dyn VkApiArg>>){
         let client = reqwest::Client::new();
 
         let mut params_map: HashMap<String, String> = HashMap::new();
@@ -45,10 +45,7 @@ impl VkApi{
             .send()
             .await;
 
-        let resp: Response = match res {
-            Ok(T) => T,
-            Err(E) => panic!(E)
-        };
+        let resp: Response = res.unwrap();
 
         println!("{}", resp.status())
 
