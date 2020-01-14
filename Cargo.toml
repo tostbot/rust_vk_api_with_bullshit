@@ -10,5 +10,7 @@ edition = "2018"
 
 num = "0.2.0"
 reqwest = { version = "0.10", features = ["json"] }
-tokio = { version = "0.2", features = ["full"] }
+
 maplit = "*"
+futures = "*"
+tokio = { version = "0.2.9", features = ["macros"] }

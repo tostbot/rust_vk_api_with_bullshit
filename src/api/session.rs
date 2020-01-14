@@ -1,7 +1,7 @@
 pub struct Session{
     token: String,
     user_id: Option<u64>,
-    version: String,
+
 }
 
 impl Session{
@@ -9,12 +9,16 @@ impl Session{
         return Session{
             token: token.to_string(),
             user_id: None,
-            version: "5.91".to_string()
+
         }
     }
 
-    pub fn new(token: String, version: String) -> Self {
-        return Session{token, user_id: None, version}
+    pub fn new(token: String, user_id: Option<u64>) -> Self {
+        return Session{token, user_id}
+    }
+
+    pub fn token(&self) -> String{
+        self.token.clone()
     }
 }
 
