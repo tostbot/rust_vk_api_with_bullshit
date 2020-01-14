@@ -1,5 +1,5 @@
 use crate::api::api::VkApi;
-use crate::api::api::VkApiArg;
+use crate::api::api::{VkApiArg, VkApiType};
 use futures::executor::block_on;
 use crate::api::session::Session;
 #[macro_use] extern crate maplit;
@@ -7,13 +7,30 @@ use crate::api::session::Session;
 
 mod api;
 
+macro_rules! vk_args {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(hashmap!(@single $rest)),*]));
+
+    ($($key:expr => $value:expr,)+) => { hashmap!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _cap = hashmap!(@count $($key),*);
+            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
+            $(
+                let _ = _map.insert($key.to_string(), $value.get_enum_type());
+            )*
+            _map
+        }
+    };
+}
+
 
 #[tokio::main]
 async fn main() {
 
-    let session = Session::from_token("cb55876e4a47f438d33fb456e170e695f7c5e8723668fe37e9251f3d338f5f79ecfa831de5cba96c01708");
+    let session = Session::from_token("abacaba");
     let api = VkApi::new(session);
 
-    api.call("users.get".to_string(), hashmap!("user_ids".to_string() => VkApiArg::Integer(1))).await;
+    api.call("users.get", vk_args!("user_ids" => vec!(1, 2))).await;
 
 }

@@ -8,7 +8,7 @@ use std::iter::IntoIterator;
 pub struct VkApi {
     client: reqwest::Client,
     session: Session,
-    version: String
+    version: String,
 }
 
 pub enum VkApiArg {
@@ -26,17 +26,21 @@ pub enum VkApiArg {
 impl VkApiArg {
     fn serialize(&self) -> String {
         match &self {
-            VkApiArg::Integer(I) => I.to_string(),
-            VkApiArg::Float(F) => F.to_string(),
-            VkApiArg::String(S) => S.to_string(),
-            VkApiArg::Bool(B) => B.to_string(),
+            VkApiArg::Integer(i) => i.to_string(),
+            VkApiArg::Float(f) => f.to_string(),
+            VkApiArg::String(s) => s.to_string(),
+            VkApiArg::Bool(b) => b.to_string(),
+            VkApiArg::IntArray(ia) => {
+                let strings: Vec<String> = ia.iter().map(|x| x.to_string()).collect();
+                strings.join(",")
+            }
             _ => panic!("Not implemented")
         }
     }
 }
 
 impl VkApi {
-    pub async fn call(&self, method: String, params: HashMap<String, VkApiArg>) {
+    pub async fn call(&self, method: &str, params: HashMap<String, VkApiArg>) {
         let mut params_map: HashMap<String, String> = HashMap::new();
 
         params_map.insert("access_token".to_string(), self.session.token());
@@ -58,6 +62,22 @@ impl VkApi {
     }
 
     pub fn new(session: Session) -> Self {
-        VkApi { session, client: reqwest::Client::new(), version: "5.91".to_string()}
+        VkApi { session, client: reqwest::Client::new(), version: "5.91".to_string() }
+    }
+}
+
+pub trait VkApiType {
+    fn get_enum_type(&self) -> VkApiArg;
+}
+
+impl VkApiType for i64 {
+    fn get_enum_type(&self) -> VkApiArg {
+        VkApiArg::Integer(*self)
+    }
+}
+
+impl VkApiType for Vec<i64> {
+    fn get_enum_type(&self) -> VkApiArg {
+        VkApiArg::IntArray(self.clone())
     }
 }
