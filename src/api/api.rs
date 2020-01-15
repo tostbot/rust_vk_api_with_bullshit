@@ -4,6 +4,25 @@ use reqwest::Response;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::iter::IntoIterator;
+use serde_json::Value;
+
+
+ macro_rules! vk_args {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(vk_arg!(@single $rest)),*]));
+
+    ($($key:expr => $value:expr,)+) => { vk_arg!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _cap = hashmap!(@count $($key),*);
+            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
+            $(
+                let _ = _map.insert($key.to_string(), $value.get_enum_type());
+            )*
+            _map
+        }
+    };
+}
 
 pub struct VkApi {
     client: reqwest::Client,
@@ -40,7 +59,7 @@ impl VkApiArg {
 }
 
 impl VkApi {
-    pub async fn call(&self, method: &str, params: HashMap<String, VkApiArg>) {
+    pub async fn call(&self, method: &str, params: HashMap<String, VkApiArg>) -> Value {
         let mut params_map: HashMap<String, String> = HashMap::new();
 
         params_map.insert("access_token".to_string(), self.session.token());
@@ -58,7 +77,14 @@ impl VkApi {
 
         let resp: Response = res.unwrap();
 
-        println!("Status: {}", resp.text().await.unwrap())
+        let text = resp.text().await.unwrap();
+
+        println!("Response: {}", text);
+
+        serde_json::from_str(&text).unwrap()
+
+
+
     }
 
     pub fn new(session: Session) -> Self {
@@ -79,5 +105,10 @@ impl VkApiType for i64 {
 impl VkApiType for Vec<i64> {
     fn get_enum_type(&self) -> VkApiArg {
         VkApiArg::IntArray(self.clone())
+    }
+}
+impl VkApiType for bool {
+    fn get_enum_type(&self) -> VkApiArg {
+        VkApiArg::Bool(*self)
     }
 }

@@ -14,3 +14,4 @@ reqwest = { version = "0.10", features = ["json"] }
 maplit = "*"
 futures = "*"
 tokio = { version = "0.2.9", features = ["macros"] }
+serde_json = "*"
