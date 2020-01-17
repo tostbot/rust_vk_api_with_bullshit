@@ -17,8 +17,8 @@ async fn main() {
     let session = Session::from_token("abacaba");
     let api = VkApi::new(session);
 
-    let value = api.call("users.get", vk_args!("user_ids" => vec!(1, 2))).await;
-    println!("Resp: {:?}", value.get("response"));
+    //let value = api.call("users.get", vk_args!("user_ids" => vec!(1, 2))).await;
+    //println!("Resp: {:?}", value.get("response"));
 
     let mut longpoll = LongPoll::with_pts(api);
     longpoll.update_server().await;

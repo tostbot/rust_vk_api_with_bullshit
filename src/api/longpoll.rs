@@ -73,14 +73,12 @@ impl LongPoll{
             return Err("Please update server before this function call".to_string())
         }
 
-        let ts_str = self.ts.unwrap().to_string();
-        let wait_str = self.wait.to_string();
         let pts_str: String;
 
-        let mut params = hashmap!("act" => "a_check", "key" => &self.key.as_ref().unwrap(), "ts" => &ts_str, "wait" => &wait_str );
+        let mut params = hashmap!("act" => "a_check".to_string(), "key" => self.key.as_ref().unwrap().clone(), "ts" => self.ts.unwrap().to_string(), "wait" => self.wait.to_string() );
+
         if self.pts != None{
-            pts_str = self.pts.unwrap().to_string();
-            params.insert("pts", &pts_str);
+            params.insert("pts", self.pts.unwrap().to_string());
         }
 
          let resp = self.client
