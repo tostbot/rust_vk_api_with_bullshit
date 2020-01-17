@@ -7,22 +7,6 @@ use std::iter::IntoIterator;
 use serde_json::Value;
 
 
- macro_rules! vk_args {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(vk_arg!(@single $rest)),*]));
-
-    ($($key:expr => $value:expr,)+) => { vk_arg!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
-        {
-            let _cap = hashmap!(@count $($key),*);
-            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
-            $(
-                let _ = _map.insert($key.to_string(), $value.get_enum_type());
-            )*
-            _map
-        }
-    };
-}
 
 pub struct VkApi {
     client: reqwest::Client,

@@ -1,6 +1,16 @@
-#[macro_use] use super::api;
+#[macro_use]
 use super::api::{VkApi, VkApiArg, VkApiType};
 use serde_json::to_string;
+
+pub enum LongpollMode {
+    GetAttachments = 1,
+    GetExtended = 1 << 3,
+    GetPts = 1 << 5,
+    GetExtraOnline = 1 << 6,
+    GetRandomId = 1 << 7,
+    ALL = (LongpollMode::GetAttachments as u16 + LongpollMode::GetExtended as u16 + LongpollMode::GetPts as u16 + LongpollMode::GetExtraOnline as u16 + LongpollMode::GetRandomId as u16) as isize
+
+}
 
 pub struct LongPoll{
     api: VkApi,
@@ -9,28 +19,16 @@ pub struct LongPoll{
     need_pts: bool,
     ts: Option<u64>,
     pts: Option<u64>,
-    server: Option<String>
+    server: Option<String>,
+    key: Option<String>,
+    mode: LongpollMode,
+    wait: u32
 }
 
-macro_rules! vk_args {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(vk_arg!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { vk_arg!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
-        {
-            let _cap = hashmap!(@count $($key),*);
-            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
-            $(
-                let _ = _map.insert($key.to_string(), $value.get_enum_type());
-            )*
-            _map
-        }
-    };
-}
 
 impl LongPoll{
-    pub fn new(api: VkApi, need_pts: bool) -> Self{
+    pub fn new(api: VkApi, need_pts: bool, mode: LongpollMode, wait: u32) -> Self{
         return LongPoll{
             api,
             is_connected: false,
@@ -38,34 +36,60 @@ impl LongPoll{
             need_pts,
             ts: None,
             pts: None,
-            server: None
+            server: None,
+            key: None,
+            mode,
+            wait
         }
     }
 
     pub fn with_pts(api: VkApi) -> Self{
-        Self::new(api, true)
+        Self::new(api, true, LongpollMode::ALL, 25)
     }
 
     pub async fn update_server(&mut self){
         let resp = self.api.call("messages.getLongPollServer", vk_args!("lp_version" => 3, "need_pts" => self.need_pts)).await;
         let response = &resp["response"];
-        let ts = &response["ts"].as_u64();
+        let ts = &response["ts"].as_u64().unwrap();
         let server = response["server"].as_str().unwrap().to_string();
+        let key = response["key"].as_str().unwrap().to_string();
 
         if self.need_pts{
-            let pts = &resp["pts"].as_u64();
-            self.pts = *pts;
+            let pts = &response["pts"].as_u64().unwrap();
+            self.pts = Some(*pts);
         }
 
 
-        self.ts = *ts;
+        self.ts = Some(*ts);
         self.server = Some(server);
+        self.key = Some(key);
 
         println!("Server updated. Server: {server:?}, ts: {ts:?}, pts: {pts:?}", server=self.server, ts=ts, pts=self.pts)
 
     }
 
-    fn connect(){
+    pub async fn get_events(&self) -> Result<(), String>{
+        if self.key == None || self.ts == None{
+            return Err("Please update server before this function call".to_string())
+        }
+
+        let ts_str = self.ts.unwrap().to_string();
+        let wait_str = self.wait.to_string();
+        let pts_str: String;
+
+        let mut params = hashmap!("act" => "a_check", "key" => &self.key.as_ref().unwrap(), "ts" => &ts_str, "wait" => &wait_str );
+        if self.pts != None{
+            pts_str = self.pts.unwrap().to_string();
+            params.insert("pts", &pts_str);
+        }
+
+         let resp = self.client
+             .get(&format!("http://{}", &self.server.as_ref().unwrap()))
+             .query(&params).send();
+
+        println!("Events: {:?}", resp.await.unwrap().text().await);
+
+        Ok(())
 
     }
 
